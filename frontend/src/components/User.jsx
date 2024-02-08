@@ -1,41 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const User = () => {
+  const { id } = useParams();
   const [user, setUser] = useState({});
   const [formData, setFormData] = useState({});
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
-  const [token, setToken] = useState('');
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Fetch JWT token from local storage
-        const storedToken = localStorage.getItem('token');
-        if (!storedToken) throw new Error('Token not found');
-        
-        // Set token in state
-        setToken(storedToken);
-
-        // Make request with token in header to fetch user details
-        const response = await axios.get(`http://localhost:3000/api/user/`, {
-          headers: {
-            Authorization: storedToken
-          }
-        });
+        const response = await axios.get(`http://localhost:3000/api/user/${id}`);
         setUser(response.data);
-        setFormData(response.data);
-        setError('');
+        setFormData(response.data); // Set form data to prefill the edit form
+        setError(''); // Reset error if user is found
       } catch (error) {
-        console.error('Error fetching user:', error);
-        setError('Error fetching user data');
+        if (error.response && error.response.status === 404) {
+          setError('User not found');
+        } else {
+          setError('Error fetching user data');
+        }
       }
     };
-
+  
     fetchUser();
-  }, []);
+  }, [id]);
+  
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,18 +40,16 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Send PUT request with updated user data and token in header
-      const response = await axios.put(`http://localhost:3000/api/user/`, formData, {
-        headers: {
-          Authorization: token // Send token with the request
-        }
-      });
+      const response = await axios.put(`http://localhost:3000/api/user/${id}`, formData);
       setUser(response.data);
       setFormData(response.data);
       setEditing(false);
     } catch (error) {
-      console.error('Error updating user:', error);
-      setError('Error updating user data');
+      if (error.response && error.response.data && error.response.data.error) {
+        setError(error.response.data.error);
+      } else {
+        setError('Error updating user data');
+      }
     }
   };
 
@@ -70,11 +60,48 @@ const User = () => {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         {editing ? (
           <form onSubmit={handleSubmit}>
-            {/* Input fields */}
+            <div className="mb-4">
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                required
+                value={formData.name || ''}
+                onChange={handleChange}
+                placeholder="Name"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:border-blue-500 text-black"
+              />
+            </div>
+            <div className="mb-4">
+              <input
+                id="phone"
+                name="phone"
+                type="text"
+                autoComplete="phone"
+                required
+                value={formData.phone || ''}
+                onChange={handleChange}
+                placeholder="Phone"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:border-blue-500 text-black"
+              />
+            </div>
+            <div className="flex items-center justify-center mb-6">
+              <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Save
+              </button>
+            </div>
           </form>
         ) : (
           <div>
-            {/* Display user details */}
+            <p><strong>Name:</strong> {user.name}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Phone:</strong> {user.phone}</p>
+            <div className="flex items-center justify-center mb-6">
+              <button onClick={handleEdit} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Edit
+              </button>
+            </div>
           </div>
         )}
         <div className="text-center text-sm">
