@@ -7,7 +7,7 @@ import Error from './components/Error';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter >
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
 

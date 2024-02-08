@@ -1,28 +1,41 @@
-// User.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const User = () => {
-  const { id } = useParams();
   const [user, setUser] = useState({});
   const [formData, setFormData] = useState({});
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
+  const [token, setToken] = useState('');
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/user/${id}`);
+        // Fetch JWT token from local storage
+        const storedToken = localStorage.getItem('token');
+        if (!storedToken) throw new Error('Token not found');
+        
+        // Set token in state
+        setToken(storedToken);
+
+        // Make request with token in header to fetch user details
+        const response = await axios.get(`http://localhost:3000/api/user/`, {
+          headers: {
+            Authorization: storedToken
+          }
+        });
         setUser(response.data);
-        setFormData(response.data); // Set form data to prefill the edit form
+        setFormData(response.data);
+        setError('');
       } catch (error) {
         console.error('Error fetching user:', error);
+        setError('Error fetching user data');
       }
     };
 
     fetchUser();
-  }, [id]);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,57 +48,37 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`/api/user/${id}`, formData);
+      // Send PUT request with updated user data and token in header
+      const response = await axios.put(`http://localhost:3000/api/user/`, formData, {
+        headers: {
+          Authorization: token // Send token with the request
+        }
+      });
       setUser(response.data);
       setFormData(response.data);
       setEditing(false);
     } catch (error) {
-      setError(error.response.data.error);
+      console.error('Error updating user:', error);
+      setError('Error updating user data');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">User Details</h2>
-        </div>
+    <div className="flex justify-center items-center h-screen bg-gray-900 text-white">
+      <div className="max-w-md w-full bg-gray-800 p-8 rounded shadow-lg">
+        <h2 className="text-3xl font-bold mb-6 text-center">User Details</h2>
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         {editing ? (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="name" className="sr-only">Name</label>
-                <input id="name" name="name" type="text" autoComplete="name" required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Name" value={formData.name || ''} onChange={handleChange} />
-              </div>
-              <div>
-                <label htmlFor="email-address" className="sr-only">Email address</label>
-                <input id="email-address" name="email" type="email" autoComplete="email" required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email address" value={formData.email || ''} disabled />
-              </div>
-              <div>
-                <label htmlFor="phone" className="sr-only">Phone</label>
-                <input id="phone" name="phone" type="text" autoComplete="phone" required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Phone" value={formData.phone || ''} onChange={handleChange} />
-              </div>
-            </div>
-
-            <div>
-              <button type="submit" className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Save
-              </button>
-            </div>
+          <form onSubmit={handleSubmit}>
+            {/* Input fields */}
           </form>
         ) : (
-          <div className="mt-8">
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Phone:</strong> {user.phone}</p>
-            <button onClick={handleEdit} className="mt-4 group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              Edit
-            </button>
+          <div>
+            {/* Display user details */}
           </div>
         )}
-        {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}
-        <div className="mt-4 flex items-center justify-between">
-          <Link to="/" className="font-medium text-indigo-600 hover:text-indigo-500">Back to Home</Link>
+        <div className="text-center text-sm">
+          <Link to="/" className="text-blue-400">Back to Home</Link>
         </div>
       </div>
     </div>

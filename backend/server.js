@@ -46,59 +46,51 @@ const loginSchema = z.object({
 
 // Signup API
 app.post('/api/signup', (req, res) => {
-  try {
-    const { name, email, password, phone } = signupSchema.parse(req.body);
+  const { name, email, password, phone } = signupSchema.parse(req.body);
 
-    // Hash password before saving to the database
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-      if (err) {
-        console.error('Error hashing password:', err);
-        res.status(500).json({ error: 'Internal server error' });
-      } else {
-        connection.query('INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, phone], (error, results) => {
-          if (error) {
-            console.error('Error saving user to database:', error);
-            res.status(500).json({ error: 'Internal server error' });
-          } else {
-            res.status(201).json({ message: 'User registered successfully' });
-          }
-        });
-      }
-    });
-  } catch (error) {
-    console.error('Validation error:', error.errors);
-    res.status(400).json({ error: 'Validation error' });
-  }
+  // Hash password before saving to the database
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error('Error hashing password:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      connection.query('INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, phone], (error, results) => {
+        if (error) {
+          console.error('Error saving user to database:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        } else {
+          res.status(201).json({ message: 'User registered successfully' });
+        }
+      });
+    }
+  });
 });
 
 // Login API
 app.post('/api/login', (req, res) => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
+  const { email, password } = loginSchema.parse(req.body);
 
-    connection.query('SELECT * FROM users WHERE email = ?', [email], async (error, results) => {
-      if (error) {
-        console.error('Database error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      } else if (results.length === 0) {
-        res.status(401).json({ error: 'Username not found' });
+  connection.query('SELECT * FROM users WHERE email = ?', [email], async (error, results) => {
+    if (error) {
+      console.error('Database error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.length === 0) {
+      res.status(401).json({ error: 'Username not found' });
+    } else {
+      const user = results[0];
+      const validPassword = await bcrypt.compare(password, user.password);
+
+      if (validPassword) {
+        // Sign JWT token with user's email and database ID
+        const token = jwt.sign({ userEmail: email, userId: user.id }, JWT_SECRET);
+        res.status(200).json({ token });
       } else {
-        const user = results[0];
-        const validPassword = await bcrypt.compare(password, user.password);
-
-        if (validPassword) {
-          const token = jwt.sign({ userId: email.id }, JWT_SECRET, { expiresIn: '1h' });
-          res.status(200).json({ token });
-        } else {
-          res.status(401).json({ error: 'Invalid password' });
-        }
+        res.status(401).json({ error: 'Auth Error' });
       }
-    });
-  } catch (error) {
-    console.error('Validation error:', error.errors);
-    res.status(400).json({ error: 'Validation error' });
-  }
+    }
+  });
 });
+
 
 // Middleware to verify JWT token
 function verifyToken(req, res, next) {
@@ -113,29 +105,32 @@ function verifyToken(req, res, next) {
       return res.status(401).json({ error: 'Failed to authenticate token' });
     }
 
-    req.userId = decoded.userId;
+    req.userId = decoded.userId; // Store user ID in request object
     next();
   });
 }
 
 // Get User Details API
-app.get('/api/user/:id', verifyToken, (req, res) => {
-  const userId = req.params.id;
+app.get('/api/user', verifyToken, (req, res) => {
+  const userId = req.userId; // Extract user ID from JWT token
+  console.log('User ID:', userId);
 
   connection.query('SELECT * FROM users WHERE id = ?', [userId], (error, results) => {
     if (error) {
       console.error('Database error:', error);
       res.status(500).json({ error: 'Internal server error' });
     } else if (results.length === 0) {
+      console.log('User not found for ID:', userId);
       res.status(404).json({ error: 'User not found' });
     } else {
       const user = results[0];
-      // Exclude sensitive information like password before sending user details
       delete user.password;
+      console.log('User details:', user);
       res.status(200).json(user);
     }
   });
 });
+
 
 // Edit User Details API
 app.put('/api/user/:id', verifyToken, (req, res) => {
