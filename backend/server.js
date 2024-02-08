@@ -133,8 +133,9 @@ app.get('/api/user', verifyToken, (req, res) => {
 
 
 // Edit User Details API
-app.put('/api/user/:id', verifyToken, (req, res) => {
-    const userId = req.params.id;
+app.put('/api/user/', verifyToken, (req, res) => {
+  const userId = req.userId; // Extract user ID from JWT token
+  console.log('User ID:', userId);
     const { name, phone } = req.body;
   
     connection.query('UPDATE users SET name = ?, phone = ? WHERE id = ?', [name, phone, userId], (error, results) => {

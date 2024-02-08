@@ -12,9 +12,9 @@ const User = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/user/${id}`);
+        const response = await axios.get(`http://localhost:3000/api/user/`);
         setUser(response.data);
-        setFormData(response.data); // Set form data to prefill the edit form
+        setFormData({ ...response.data }); // Set form data to prefill the edit form
         setError(''); // Reset error if user is found
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -40,9 +40,9 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://localhost:3000/api/user/${id}`, formData);
+      const response = await axios.put(`http://localhost:3000/api/user/`, formData);
       setUser(response.data);
-      setFormData(response.data);
+      setFormData({ ...response.data });
       setEditing(false);
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
