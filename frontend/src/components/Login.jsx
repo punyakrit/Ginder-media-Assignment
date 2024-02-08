@@ -19,17 +19,20 @@ const Login = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/login', formData);
       const token = response.data.token;
-      console.log(token)
-      if(token){
-        axios.defaults.headers.common["Authorization"] = token;
-      }
   
+      // Store the token in localStorage
+      localStorage.setItem('token', token);
+  
+      // Set the default Authorization header for all axios requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    
       alert("Login Success");
       navigate('/user');
     } catch (error) {
       setError(error.response.data.error);
     }
   };
+  
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-900 text-white">

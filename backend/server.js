@@ -94,7 +94,8 @@ app.post('/api/login', (req, res) => {
 
 // Middleware to verify JWT token
 function verifyToken(req, res, next) {
-  const token = req.headers.authorization;
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(403).json({ error: 'Token not provided' });
