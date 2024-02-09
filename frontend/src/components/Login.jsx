@@ -17,7 +17,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('//3.109.4.105:3000/api/login', formData);
+      const response = await axios.post('https://login-7wzr.onrender.com/api/login', formData);
       const token = response.data.token;
   
       // Store the token in localStorage

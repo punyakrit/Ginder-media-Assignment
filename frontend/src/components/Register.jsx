@@ -19,7 +19,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('//3.109.4.105:3000/api/signup', formData);
+      const response = await axios.post('https://login-7wzr.onrender.com/api/signup', formData);
       alert("Account created")
       navigate('/login');
     } catch (error) {

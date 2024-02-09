@@ -63,7 +63,7 @@ const User = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get(`//3.109.4.105:3000/api/user/`);
+        const response = await axios.get(`https://login-7wzr.onrender.com/api/user/`);
         setUser(response.data);
         setFormData({ ...response.data });
         setError('');
@@ -90,12 +90,12 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`//3.109.4.105:3000/api/user/`, formData);
+      const response = await axios.put(`https://login-7wzr.onrender.com/api/user/`, formData);
       setUser(response.data);
       setFormData({ ...response.data });
       setEditing(false);
 
-      const updatedResponse = await axios.get(`//3.109.4.105:3000/api/user/`);
+      const updatedResponse = await axios.get(`https://login-7wzr.onrender.com/api/user/`);
       setUser(updatedResponse.data);
       setFormData({ ...updatedResponse.data });
     } catch (error) {
