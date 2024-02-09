@@ -4,11 +4,18 @@ import axios from 'axios';
 
 const UserDisplay = ({ user }) => (
   <div>
-    <p><strong>Name:</strong> {user.name}</p>
-    <p><strong>Email:</strong> {user.email}</p>
-    <p><strong>Phone:</strong> {user.phone}</p>
+    {user.name ? (
+      <>
+        <p><strong>Name:</strong> {user.name}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Phone:</strong> {user.phone}</p>
+      </>
+    ) : (
+      <p>Login First</p>
+    )}
   </div>
 );
+
 
 const UserEdit = ({ formData, handleChange, handleSubmit }) => (
   <form onSubmit={handleSubmit}>
