@@ -16,7 +16,6 @@ const UserDisplay = ({ user }) => (
   </div>
 );
 
-
 const UserEdit = ({ formData, handleChange, handleSubmit }) => (
   <form onSubmit={handleSubmit}>
     <div className="mb-4">
