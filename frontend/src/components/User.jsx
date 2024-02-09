@@ -63,7 +63,7 @@ const User = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/user/`);
+        const response = await axios.get(`https://backend-login-qzxq.onrender.com/api/user/`);
         setUser(response.data);
         setFormData({ ...response.data });
         setError('');
@@ -90,12 +90,12 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://localhost:3000/api/user/`, formData);
+      const response = await axios.put(`https://backend-login-qzxq.onrender.com/api/user/`, formData);
       setUser(response.data);
       setFormData({ ...response.data });
       setEditing(false);
 
-      const updatedResponse = await axios.get(`http://localhost:3000/api/user/`);
+      const updatedResponse = await axios.get(`https://backend-login-qzxq.onrender.com/api/user/`);
       setUser(updatedResponse.data);
       setFormData({ ...updatedResponse.data });
     } catch (error) {
