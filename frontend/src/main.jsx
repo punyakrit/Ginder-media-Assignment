@@ -15,7 +15,7 @@ function pingBackend() {
       .catch(error => {
         console.error('Error pinging backend:', error.message);
       });
-  }, 20000); // Ping every 60 seconds (adjust as needed)
+  }, 60000); // Ping every 60 seconds (adjust as needed)
 }
 
 // Call the function to start pinging the backend
