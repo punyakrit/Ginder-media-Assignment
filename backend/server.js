@@ -38,6 +38,10 @@ const loginSchema = z.object({
   password: z.string()
 });
 
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ message: 'Backend is alive' });
+});
+
 // Signup API
 app.post('/api/signup', (req, res) => {
   const { name, email, password, phone } = signupSchema.parse(req.body);
