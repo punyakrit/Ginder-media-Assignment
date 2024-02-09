@@ -4,28 +4,22 @@ const mysql = require('mysql');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { z } = require('zod');
-const cors = require('cors')
+const cors = require('cors');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors());
 
-// MySQL Connection
-const connection = mysql.createConnection({
+// MySQL Connection Pooling
+const pool = mysql.createPool({
+  connectionLimit: 10, // Adjust as needed based on your application requirements
   host: 'sql6.freesqldatabase.com',
   user: 'sql6682823',
   password: 'AUNLEWttlx',
   database: 'sql6682823',
   port: 3306
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('Error connecting to MySQL database:', err);
-    process.exit(1); // Exit the process if unable to connect to the database
-  }
-  console.log('Connected to MySQL database');
 });
 
 // JWT Secret Key
@@ -48,13 +42,12 @@ const loginSchema = z.object({
 app.post('/api/signup', (req, res) => {
   const { name, email, password, phone } = signupSchema.parse(req.body);
 
-  // Hash password before saving to the database
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       console.error('Error hashing password:', err);
       res.status(500).json({ error: 'Internal server error' });
     } else {
-      connection.query('INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, phone], (error, results) => {
+      pool.query('INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, phone], (error, results) => {
         if (error) {
           console.error('Error saving user to database:', error);
           res.status(500).json({ error: 'Internal server error' });
@@ -70,7 +63,7 @@ app.post('/api/signup', (req, res) => {
 app.post('/api/login', (req, res) => {
   const { email, password } = loginSchema.parse(req.body);
 
-  connection.query('SELECT * FROM users WHERE email = ?', [email], async (error, results) => {
+  pool.query('SELECT * FROM users WHERE email = ?', [email], async (error, results) => {
     if (error) {
       console.error('Database error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -81,7 +74,6 @@ app.post('/api/login', (req, res) => {
       const validPassword = await bcrypt.compare(password, user.password);
 
       if (validPassword) {
-        // Sign JWT token with user's email and database ID
         const token = jwt.sign({ userEmail: email, userId: user.id }, JWT_SECRET);
         res.status(200).json({ token });
       } else {
@@ -90,7 +82,6 @@ app.post('/api/login', (req, res) => {
     }
   });
 });
-
 
 // Middleware to verify JWT token
 function verifyToken(req, res, next) {
@@ -106,17 +97,16 @@ function verifyToken(req, res, next) {
       return res.status(401).json({ error: 'Failed to authenticate token' });
     }
 
-    req.userId = decoded.userId; // Store user ID in request object
+    req.userId = decoded.userId;
     next();
   });
 }
 
 // Get User Details API
 app.get('/api/user', verifyToken, (req, res) => {
-  const userId = req.userId; // Extract user ID from JWT token
-  console.log('User ID:', userId);
+  const userId = req.userId;
 
-  connection.query('SELECT * FROM users WHERE id = ?', [userId], (error, results) => {
+  pool.query('SELECT * FROM users WHERE id = ?', [userId], (error, results) => {
     if (error) {
       console.error('Database error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -126,29 +116,25 @@ app.get('/api/user', verifyToken, (req, res) => {
     } else {
       const user = results[0];
       delete user.password;
-      console.log('User details:', user);
       res.status(200).json(user);
     }
   });
 });
 
-
 // Edit User Details API
 app.put('/api/user/', verifyToken, (req, res) => {
-  const userId = req.userId; // Extract user ID from JWT token
-  console.log('User ID:', userId);
-    const { name, phone } = req.body;
+  const userId = req.userId;
+  const { name, phone } = req.body;
   
-    connection.query('UPDATE users SET name = ?, phone = ? WHERE id = ?', [name, phone, userId], (error, results) => {
-      if (error) {
-        console.error('Database error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      } else {
-        res.status(200).json({ message: 'User details updated successfully' });
-      }
-    });
+  pool.query('UPDATE users SET name = ?, phone = ? WHERE id = ?', [name, phone, userId], (error, results) => {
+    if (error) {
+      console.error('Database error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.status(200).json({ message: 'User details updated successfully' });
+    }
   });
-  
+});
 
 // Catch-all route for undefined routes
 app.use((req, res) => {
